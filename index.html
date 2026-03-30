@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal - Live Cloud</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: #0f172a; color: white; padding: 40px 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 800px; }
+        header { text-align: center; margin-bottom: 30px; }
+        header h1 { color: #38bdf8; font-size: 2.2rem; }
+        
+        .card { background: rgba(30, 41, 59, 0.8); padding: 25px; border-radius: 15px; border: 1px solid #334155; margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        input { width: 100%; padding: 12px; background: #020617; border: 1px solid #334155; color: white; border-radius: 8px; outline: none; }
+        input:focus { border-color: #38bdf8; }
+        
+        button { width: 100%; padding: 15px; background: #38bdf8; color: #0f172a; border: none; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #0ea5e9; transform: translateY(-2px); }
+
+        .table-container { background: #1e293b; border-radius: 12px; overflow: hidden; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #334155; padding: 15px; text-align: left; color: #38bdf8; }
+        td { padding: 15px; border-bottom: 1px solid #334155; }
+        .del-btn { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Student Cloud Database</h1>
+            <p>Data syncs across all devices</p>
+        </header>
+
+        <div class="card">
+            <form id="studentForm">
+                <div class="grid">
+                    <input type="text" id="name" placeholder="Name" required>
+                    <input type="email" id="email" placeholder="Email" required>
+                </div>
+                <div class="grid">
+                    <input type="tel" id="phone" placeholder="Phone" required>
+                    <input type="text" id="rollno" placeholder="Roll No" required>
+                </div>
+                <button type="submit">ADD TO DATABASE</button>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Roll No</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // STEP 1: Configuration with YOUR database URL
+        const firebaseConfig = {
+            apiKey: "AIzaSyDTj0YPBuGawzSa_rv4urkuD49HHRD3XNE",
+            authDomain: "student-c9edf.firebaseapp.com",
+            databaseURL: "https://student-c9edf-default-rtdb.firebaseio.com", 
+            projectId: "student-c9edf",
+            storageBucket: "student-c9edf.firebasestorage.app",
+            messagingSenderId: "608489904489",
+            appId: "1:608489904489:web:aa9f0f607e3ded1fb685f8"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const studentForm = document.getElementById("studentForm");
+        const tableBody = document.getElementById("tableBody");
+
+        // STEP 2: Real-time Listen (Intha section thaan data-ah keela kaattum)
+        db.ref("students").on("value", (snapshot) => {
+            const data = snapshot.val();
+            tableBody.innerHTML = ""; 
+
+            if(data) {
+                Object.keys(data).forEach(id => {
+                    const s = data[id];
+                    const row = `
+                        <tr>
+                            <td>${s.rollno}</td>
+                            <td>${s.name}</td>
+                            <td>${s.email}</td>
+                            <td><button class="del-btn" onclick="deleteEntry('${id}')">Delete</button></td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            } else {
+                tableBody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>No Data Found in Cloud</td></tr>";
+            }
+        });
+
+        // STEP 3: Push Data to Firebase
+        studentForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const student = {
+                name: document.getElementById("name").value,
+                email: document.getElementById("email").value,
+                phone: document.getElementById("phone").value,
+                rollno: document.getElementById("rollno").value
+            };
+            
+            db.ref("students").push(student)
+                .then(() => {
+                    alert("Data Saved Successfully!");
+                    studentForm.reset();
+                })
+                .catch((error) => {
+                    alert("Error: " + error.message);
+                });
+        });
+
+        // STEP 4: Delete Entry
+        function deleteEntry(id) {
+            if(confirm("Are you sure?")) {
+                db.ref("students/" + id).remove();
+            }
+        }
+    </script>
+</body>
+</html>
